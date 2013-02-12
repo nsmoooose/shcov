@@ -24,7 +24,7 @@ setup(name='%s' % (config.PROGRAM_NAME).lower(),
       author_email="simon.kagstrom@gmail.se",
 
       packages=['shcov'],
-      scripts=['scripts/shcov', 'scripts/shlcov'],
+      scripts=['scripts/shcov', 'scripts/shlcov', 'scripts/shenvcov'],
 
       data_files=[('share/%s/data' % (config.PROGRAM_NAME.lower()),
                    ['data/amber.png', 'data/gcov.css', 'data/ruby.png',
@@ -32,5 +32,6 @@ setup(name='%s' % (config.PROGRAM_NAME).lower(),
                   ('share/doc/%s/' % (config.PROGRAM_NAME.lower()), ['README']),
                   ('share/doc/%s/' % (config.PROGRAM_NAME.lower()), ['COPYING']),
                   ('share/man/man1/', ['shcov.1', 'shlcov.1']),
+                  ('share/%s' % (config.PROGRAM_NAME.lower()), ['helpers/bash_coverage']),
                   ],
       )

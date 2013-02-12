@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+# Not working:
+#
+# * scripts that change directory
+#   - workarounds; patch bash to always return absolute path for BASH_SOURCE
+#     :(
+
+import os
+import pickle
+from shcov.file import File
+import glob
+from optparse import OptionParser
+
+try:
+    import hashlib
+    has_hashlib = True
+except:
+    import md5
+    has_hashlib = False
+
+
+def md5_new():
+    if has_hashlib:
+        return hashlib.md5()
+    return md5.new()
+
+
+def convert_bash_to_data(data, output):
+    tick_count = 0
+    files = {}
+    purge_parsed_file = True
+    for infile in glob.glob(data + "/*"):
+        for line in open(infile):
+            line = line.strip()
+            if line.find("SHCOV:::") == -1:
+                if tick_count > 1 or tick_count == 0:
+                    pass
+                continue
+            tick_count = line.count("'")
+            parts = line.split(":::", 4)
+
+            cwd = parts[1]
+            name = parts[2]
+            linenr = parts[3]
+
+            fullpath = os.path.abspath(os.path.join(cwd, name))
+
+            if not os.path.exists(fullpath):
+                print "Skipping %s, not found and most likely a bug" % fullpath
+                continue
+
+            if fullpath not in files:
+                files[fullpath] = File(fullpath)
+            fh = files[fullpath]
+
+            try:
+                fh.add_to_line(linenr)
+            except:
+                print "Can't parse: '%s'" % line
+
+        if purge_parsed_file:
+            os.unlink(infile)
+
+    for fh in files:
+        fh = files[fh]
+        outfile = output + fh.path
+        if os.path.exists(outfile):
+            fh.merge_object(pickle.load(open(outfile)))
+        else:
+            try:
+                os.makedirs(os.path.dirname(outfile))
+            except OSError:
+                pass
+        fh.save(outfile)
+
+if __name__ == '__main__':
+    parser = OptionParser()
+    parser.add_option("--output", help="Output directory")
+    parser.add_option("--data", help="Data directory")
+
+    parser.set_defaults(data="/tmp/sh.coverage.bash", output="/tmp/sh.coverage.data")
+
+    (options, args) = parser.parse_args()
+
+    convert_bash_to_data(options.data, options.output)
