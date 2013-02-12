@@ -111,16 +111,16 @@ class File:
 
 
 def load(path, script_base=''):
-    file = pickle.load(open(path))
-    source_file = read_file(script_base + file.path)
+    sourcefile = pickle.load(open(path))
+    source_code = read_file(script_base + sourcefile.path)
 
     m = md5_new()
-    m.update(source_file)
+    m.update(source_code)
     digest = m.digest()
 
     # File has changed
-    if digest != file.digest:
-        file = File(file.path, source_path=script_base + file.path)
+    if digest != sourcefile.digest:
+        sourcefile = File(sourcefile.path, source_path=script_base + sourcefile.path)
 
-    file.set_source_path(script_base + file.path)
-    return file
+    sourcefile.set_source_path(script_base + sourcefile.path)
+    return sourcefile

@@ -60,11 +60,11 @@ class ShcovCollector:
         path = os.path.abspath(file_name)
         path = os.path.realpath(path)
         try:
-            file = self.files[path]
+            sourcefile = self.files[path]
         except KeyError:
             # Not found, create a new one
             try:
-                file = File(path)
+                sourcefile = File(path)
             except IOError:
                 # Cannot create the object (file not found most likely),
                 # just ignore it
@@ -72,13 +72,13 @@ class ShcovCollector:
 
             # And create the dir to save it in
             try:
-                os.makedirs(os.path.dirname(self.outpath + file.path))
+                os.makedirs(os.path.dirname(self.outpath + sourcefile.path))
             except OSError:
                 pass
-            self.files[path] = file
-        file.add_to_line(line_nr)
+            self.files[path] = sourcefile
+        sourcefile.add_to_line(line_nr)
         try:
-            file.save(self.outpath + file.path + ".%d.pkl" % (self.pid))
+            sourcefile.save(self.outpath + sourcefile.path + ".%d.pkl" % (self.pid))
         except Exception:
             # No big deal - just means that we cannot write
             # to the destination just yet
@@ -120,15 +120,15 @@ class ShcovCollector:
             self.handle_line(line)
 
     def save(self):
-        for file in self.files.values():
+        for sourcefile in self.files.values():
             # Merge into the (locked) global file and remove the pid-specific
             # one
-            file.merge_with_path(self.outpath + file.path + ".pkl")
+            sourcefile.merge_with_path(self.outpath + sourcefile.path + ".pkl")
 
             # If it hasn't been saved, no need to unlink it
-            if not file.has_been_saved():
+            if not sourcefile.has_been_saved():
                 continue
-            os.unlink(self.outpath + file.path + ".%d.pkl" % (self.pid))
+            os.unlink(self.outpath + sourcefile.path + ".%d.pkl" % (self.pid))
 
 
 def usage():
