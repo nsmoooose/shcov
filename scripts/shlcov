@@ -11,12 +11,18 @@
 ##
 ######################################################################
 
-import os, sys, time, re, getopt, shutil
+import os
+import sys
+import time
+import re
+import getopt
+import shutil
 
 base_dir = os.path.abspath(sys.path[0] + "/../")
-sys.path =  [base_dir] + sys.path
+sys.path = [base_dir] + sys.path
 
-import shcov, shcov.config
+import shcov
+import shcov.config
 from shcov.file import File
 from shcov.utils import *
 
@@ -28,8 +34,9 @@ else_then_done_regexp = re.compile("\A(else|then|fi|done|esac|do|;;){1}\\b")
 case_nr_regexp = re.compile("\A(([\',\",0-9,a-z,A-Z,_, ]+)|\*{1})\){1}\\Z")
 heredoc_regexp = re.compile(".*<<-?\'?([a-zA-Z]+)\'?")
 
+
 class ShcovDataOutput:
-    def __init__(self, script_base, inpath, outpath, low_limit = 15, high_limit = 50):
+    def __init__(self, script_base, inpath, outpath, low_limit=15, high_limit=50):
         self.script_base = script_base
         self.inpath = inpath
         self.outpath = outpath
@@ -65,7 +72,7 @@ class ShcovDataOutput:
         return True
 
     def calculate_statistics(self, file):
-        source_data = read_file( file.get_source_path() )
+        source_data = read_file(file.get_source_path())
 
         # OK, this is ugly: Just put these in the object...
         file.total_lines = 0
@@ -78,7 +85,7 @@ class ShcovDataOutput:
         for line in source_data.splitlines():
             if self.line_is_code(line):
                 file.total_lines = file.total_lines + 1
-                if file.lines.has_key(nr) or previousLineIsContinued == True:
+                if nr in file.lines or previousLineIsContinued:
                     file.executed_lines = file.executed_lines + 1
 
             if line.endswith("\\"):
@@ -112,14 +119,14 @@ class ShcovDataOutput:
 
         return "../" * path.count('/')
 
-    def write_header(self, of, basename, path_to_helpers, total_lines, executed_lines, is_directory = True):
+    def write_header(self, of, basename, path_to_helpers, total_lines, executed_lines, is_directory=True):
 
         # No div-by-zero please
         if total_lines == 0:
             total_lines = 1
 
         # Taken from lcov
-        header="""<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
+        header = """<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
 
 <html lang=\"en\">
 
@@ -131,7 +138,7 @@ class ShcovDataOutput:
 
 <body>
 """ % (basename, path_to_helpers)
-        legend_file="""        <tr>
+        legend_file = """        <tr>
           <td class="legendItem" width="20%">Legend:</td>
           <td class="legendValue" width="80%" colspan=4>
             <span class="legendNoCov">
@@ -143,7 +150,7 @@ class ShcovDataOutput:
          </td>
         </tr>
 """
-        legend_directory="""        <tr>
+        legend_directory = """        <tr>
           <td class="legendItem" width="20%%">Legend:</td>
           <td class="legendValue" width="80%%" colspan=4>
             <span class="coverLegendLo">
@@ -161,7 +168,7 @@ class ShcovDataOutput:
         legend = legend_file
         if is_directory:
             legend = legend_directory
-        top_table="""  <table width="100%%" border=0 cellspacing=0 cellpadding=0>
+        top_table = """  <table width="100%%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="title">SHCOV by Simon K&aring;gstr&ouml;m</td></tr>
     <tr><td class="ruler"><img src="%sglass.png" width=3 height=3 alt=""></td></tr>
 
@@ -200,11 +207,9 @@ class ShcovDataOutput:
 
         of.write(top_table)
 
-
     def write_footer(self, of):
         of.write("""</body>
 </html>""")
-
 
     def handle_one_file(self, file):
         dirname = os.path.dirname(file.path)
@@ -213,17 +218,17 @@ class ShcovDataOutput:
         path = path.replace('//', '/')
 
         try:
-            os.makedirs( path )
+            os.makedirs(path)
         except OSError, e:
             # This is OK (already exists)
             pass
 
         of = open(os.path.join(path, basename + ".html"), "w")
-        path_to_helpers = self.get_relative_path_to_helpers(os.path.abspath(path) )
+        path_to_helpers = self.get_relative_path_to_helpers(os.path.abspath(path))
 
         source_data = read_file(self.script_base + file.path)
 
-        table="""  <table cellpadding=0 cellspacing=0 border=0>
+        table = """  <table cellpadding=0 cellspacing=0 border=0>
     <tr>
       <td><br></td>
     </tr>
@@ -231,7 +236,7 @@ class ShcovDataOutput:
       <td><pre class="source">
 """
 
-        table_end="""</pre>
+        table_end = """</pre>
       </td>
     </tr>
   </table>
@@ -250,8 +255,8 @@ class ShcovDataOutput:
             line = line.replace("<", "&lt;")
             line = line.replace('"', '&quot;')
 
-            if file.lines.has_key(nr) and self.line_is_code(line) or nr>1 and previousLineIsContinued == True and file.lines.has_key(firstLineOfPossibleMultiLineBlock):
-                if previousLineIsContinued == True:
+            if nr in file.lines and self.line_is_code(line) or nr > 1 and previousLineIsContinued and firstLineOfPossibleMultiLineBlock in file.lines:
+                if previousLineIsContinued:
                     of.write("""<span class="lineNum">     %5d</span><span class="lineCov">                :  %s</span>\n""" %
                              (nr, line))
                 else:
@@ -271,7 +276,7 @@ class ShcovDataOutput:
 
             nr = nr + 1
 
-            if previousLineIsContinued == False:
+            if not previousLineIsContinued:
                 firstLineOfPossibleMultiLineBlock = nr
 
         of.write(table_end)
@@ -320,8 +325,7 @@ class ShcovDataOutput:
       <td class="%s">%d&nbsp;/&nbsp;%d&nbsp;lines</td>
     </tr>
 """ % (linkname, name, path_to_helpers, color,
-       fraction, fraction, path_to_helpers, 100-fraction, fraction, covertype, fraction, covernum, executed_lines, total_lines) )
-
+       fraction, fraction, path_to_helpers, 100 - fraction, fraction, covertype, fraction, covernum, executed_lines, total_lines))
 
     def handle_files(self):
         "Output all shcov data"
@@ -382,10 +386,10 @@ class ShcovDataOutput:
             path = self.outpath + "/root/" + dir.name
             path = path.replace('//', '/')
 
-            path_to_helpers = self.get_relative_path_to_helpers( os.path.abspath(path) )
+            path_to_helpers = self.get_relative_path_to_helpers(os.path.abspath(path))
 
             try:
-                os.makedirs( path )
+                os.makedirs(path)
             except OSError, e:
                 pass
 
@@ -395,7 +399,7 @@ class ShcovDataOutput:
             self.write_directory_header(of)
             for file in dir.files:
                 self.write_directory_line(of, path_to_helpers, file.basename + ".html", file.basename,
-                                        file.total_lines, file.executed_lines)
+                                          file.total_lines, file.executed_lines)
             self.write_footer(of)
             of.close()
 
@@ -403,20 +407,19 @@ class ShcovDataOutput:
         for file in self.files:
             self.handle_one_file(file)
 
-
     def run(self):
         try:
-            os.makedirs( self.outpath )
+            os.makedirs(self.outpath)
         except OSError, e:
             pass
-        file_objs = {} # Map names to objs
+        file_objs = {}  # Map names to objs
 
         for root, dirs, files in os.walk(self.inpath, topdown=False):
             for name in files:
                 path = os.path.join(root, name)
                 try:
-                    file = shcov.file.load(path, script_base = self.script_base)
-                    if file_objs.has_key(file.path):
+                    file = shcov.file.load(path, script_base=self.script_base)
+                    if file.path in file_objs:
                         other = file_objs[file.path]
 
                         # If the files are the same, merge them
@@ -441,6 +444,7 @@ class ShcovDataOutput:
             for name in files:
                 path = os.path.join(root, name)
                 shutil.copyfile(path, os.path.join(self.outpath, name))
+
 
 def usage():
     print "Usage: shlcov [--script-base=path] [--limit=low,high] datadir outdir\n"

@@ -9,7 +9,10 @@
 ## $Id:$
 ##
 ######################################################################
-import pickle, os, fcntl, stat
+import pickle
+import os
+import fcntl
+import stat
 
 try:
     import hashlib
@@ -20,15 +23,17 @@ except:
 
 from utils import *
 
+
 def md5_new():
     if has_hashlib:
         return hashlib.md5()
     return md5.new()
 
+
 class File:
-    def __init__(self, path, source_path = None):
+    def __init__(self, path, source_path=None):
         self.path = path
-        if source_path == None:
+        if source_path is None:
             self.source_path = path
         else:
             self.source_path = source_path
@@ -67,14 +72,12 @@ class File:
     def merge_object(self, obj):
         """Merge another object into this """
 
-        for k,v in obj.lines.items():
+        for k, v in obj.lines.items():
             # Add the line numbering from the other
-            if self.lines.has_key(k):
+            if k in self.lines:
                 self.lines[k] = self.lines[k] + v
             else:
                 self.lines[k] = v
-
-
 
     def merge_with_path(self, dst_path):
         """Merge another object at @a dst_path into this one"""
@@ -85,7 +88,7 @@ class File:
 
         fcntl.lockf(fd, fcntl.LOCK_EX)
         try:
-            src = pickle.load( f )
+            src = pickle.load(f)
         except:
             # This is OK, might not exist
             src = File(self.path, self.source_path)
@@ -97,7 +100,7 @@ class File:
 
         # And save it!
         pickle.dump(self, f)
-        f.close() # Also unlocks the file
+        f.close()  # Also unlocks the file
 
     def add_to_line(self, line_nr):
         line_nr = int(line_nr)
@@ -107,7 +110,7 @@ class File:
             self.lines[line_nr] = 1
 
 
-def load(path, script_base = ''):
+def load(path, script_base=''):
     file = pickle.load(open(path))
     source_file = read_file(script_base + file.path)
 
@@ -117,7 +120,7 @@ def load(path, script_base = ''):
 
     # File has changed
     if digest != file.digest:
-        file = File(file.path, source_path = script_base + file.path)
+        file = File(file.path, source_path=script_base + file.path)
 
     file.set_source_path(script_base + file.path)
     return file

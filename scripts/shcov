@@ -13,17 +13,23 @@
 
 # export PS4='SHCOV:::${BASH_SOURCE}:::${LINENO}::: SHCOV:'
 
-import os, sys, subprocess, pickle, signal, select
+import os
+import sys
+import subprocess
+import pickle
+import signal
+import select
 
 base_dir = os.path.abspath(sys.path[0] + "/../")
-sys.path =  [base_dir] + sys.path
+sys.path = [base_dir] + sys.path
 
 import shcov
 
 from shcov.file import File
 
+
 class ShcovCollector:
-    def __init__(self, args, outpath = "/tmp/shcov", shell = ["bash", "-x"]):
+    def __init__(self, args, outpath="/tmp/shcov", shell=["bash", "-x"]):
         self.files = {}
         self.args = args
         self.outpath = outpath
@@ -69,7 +75,7 @@ class ShcovCollector:
 
             # And create the dir to save it in
             try:
-                os.makedirs( os.path.dirname(self.outpath + file.path) )
+                os.makedirs(os.path.dirname(self.outpath + file.path))
             except OSError, e:
                 pass
             self.files[path] = file
@@ -83,20 +89,20 @@ class ShcovCollector:
 
     def parse_output(self):
         """Process the bash stderr output"""
-        self.process = subprocess.Popen( self.shell + self.args,
-                                         stderr = subprocess.PIPE)
+        self.process = subprocess.Popen(self.shell + self.args,
+                                        stderr=subprocess.PIPE)
 
         fd_poll = select.poll()
-        fd_poll.register( self.process.stderr.fileno() )
+        fd_poll.register(self.process.stderr.fileno())
 
         while True:
             # Did the process exit?
             ret = self.process.poll()
-            if ret != None:
+            if ret is not None:
                 try:
                     pid = os.fork()
                 except OSError, e:
-                    raise Exception, "%s [%d]" % (e.strerror, e.errno)
+                    raise Exception("%s [%d]" % (e.strerror, e.errno))
                 if pid == 0:
                     # Read the last stuff
                     for line in self.process.stderr.readlines():
@@ -125,7 +131,8 @@ class ShcovCollector:
             # If it hasn't been saved, no need to unlink it
             if not file.has_been_saved():
                 continue
-            os.unlink( self.outpath + file.path + ".%d.pkl" % (self.pid) )
+            os.unlink(self.outpath + file.path + ".%d.pkl" % (self.pid))
+
 
 def usage():
     print "Usage: shcov [-h] [--output=where] [--shell=what] script...\n"
@@ -136,6 +143,7 @@ def usage():
     sys.exit(1)
 
 glob_sc = None
+
 
 def sighandler(signum, frame):
     glob_sc.save()
@@ -168,7 +176,7 @@ if __name__ == "__main__":
     if len(args) < 1:
         usage()
 
-    sc = ShcovCollector(args, outpath = outpath, shell = shell)
+    sc = ShcovCollector(args, outpath=outpath, shell=shell)
     glob_sc = sc
     signal.signal(signal.SIGTERM, sighandler)
     out = 1
