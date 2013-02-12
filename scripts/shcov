@@ -16,14 +16,11 @@
 import os
 import sys
 import subprocess
-import pickle
 import signal
 import select
 
 base_dir = os.path.abspath(sys.path[0] + "/../")
 sys.path = [base_dir] + sys.path
-
-import shcov
 
 from shcov.file import File
 
@@ -64,11 +61,11 @@ class ShcovCollector:
         path = os.path.realpath(path)
         try:
             file = self.files[path]
-        except KeyError, e:
+        except KeyError:
             # Not found, create a new one
             try:
                 file = File(path)
-            except IOError, e:
+            except IOError:
                 # Cannot create the object (file not found most likely),
                 # just ignore it
                 return
@@ -76,13 +73,13 @@ class ShcovCollector:
             # And create the dir to save it in
             try:
                 os.makedirs(os.path.dirname(self.outpath + file.path))
-            except OSError, e:
+            except OSError:
                 pass
             self.files[path] = file
         file.add_to_line(line_nr)
         try:
             file.save(self.outpath + file.path + ".%d.pkl" % (self.pid))
-        except Exception, e:
+        except Exception:
             # No big deal - just means that we cannot write
             # to the destination just yet
             pass

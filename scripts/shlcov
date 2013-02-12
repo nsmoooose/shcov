@@ -21,10 +21,9 @@ import shutil
 base_dir = os.path.abspath(sys.path[0] + "/../")
 sys.path = [base_dir] + sys.path
 
-import shcov
+import shcov.file
 import shcov.config
-from shcov.file import File
-from shcov.utils import *
+from shcov.utils import read_file
 
 # Regexp to match functions
 fn_regexp = re.compile("\A(function[\t, ]+)*[a-z,A-Z,_]+[a-z,A-Z,_,0-9]*[\t, ]*\([\t, ]*\)[\t, ]*")
@@ -219,7 +218,7 @@ class ShcovDataOutput:
 
         try:
             os.makedirs(path)
-        except OSError, e:
+        except OSError:
             # This is OK (already exists)
             pass
 
@@ -354,7 +353,7 @@ class ShcovDataOutput:
 
             try:
                 dir = dirs[dirname]
-            except KeyError, e:
+            except KeyError:
                 dir = Dir(dirname)
                 dirs[dirname] = dir
             dir.add_file(file)
@@ -390,7 +389,7 @@ class ShcovDataOutput:
 
             try:
                 os.makedirs(path)
-            except OSError, e:
+            except OSError:
                 pass
 
             of = open(os.path.join(path, "index.html"), "w")
@@ -410,7 +409,7 @@ class ShcovDataOutput:
     def run(self):
         try:
             os.makedirs(self.outpath)
-        except OSError, e:
+        except OSError:
             pass
         file_objs = {}  # Map names to objs
 
@@ -434,7 +433,7 @@ class ShcovDataOutput:
 
                     file_objs[file.path] = file
                     self.files.append(file)
-                except Exception, e:
+                except Exception:
                     print "Could not load", path, "ignoring"
 
         self.handle_files()

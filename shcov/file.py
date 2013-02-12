@@ -21,7 +21,7 @@ except:
     import md5
     has_hashlib = False
 
-from utils import *
+from utils import read_file
 
 
 def md5_new():
@@ -106,7 +106,7 @@ class File:
         line_nr = int(line_nr)
         try:
             self.lines[line_nr] = self.lines[line_nr] + 1
-        except KeyError, e:
+        except KeyError:
             self.lines[line_nr] = 1
 
 
