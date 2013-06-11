@@ -12,7 +12,8 @@ from lxml.etree import tostring as toxml
 from lxml.builder import E as tag
 from operator import attrgetter
 
-class ShcovFileStats (object):
+
+class ShcovFileStats(object):
     """
     Object that calculates the number of covered and uncovered lines
     for a single file.
@@ -34,14 +35,15 @@ class ShcovFileStats (object):
     LINE_NOCODE = 2
 
     # Regexp to match functions
-    fn_regexp = re.compile("\A(function[\t, ]+)*[a-z,A-Z,_]+[a-z,A-Z,_,0-9]*[\t, ]*\([\t, ]*\)[\t, ]*")
+    fn_regexp = re.compile(
+        "\A(function[\t, ]+)*[a-z,A-Z,_]+[a-z,A-Z,_,0-9]*[\t, ]*\([\t, ]*\)[\t, ]*")
     brace_regexp = re.compile("\A(\{|\}){1}")
 
     else_then_done_regexp = re.compile("\A(else|then|fi|done|esac|do|;;){1}\\b")
     case_nr_regexp = re.compile("\A(([\',\",0-9,a-z,A-Z,_, ]+)|\*{1})\){1}\\Z")
     heredoc_regexp = re.compile(".*<<-?\'?([a-zA-Z]+)\'?")
 
-    def __init__ (self, sourcefile):
+    def __init__(self, sourcefile):
         self.total_lines = 0
         self.executed_lines = 0
         self.sourcefile = sourcefile
@@ -58,11 +60,11 @@ class ShcovFileStats (object):
                 self.total_lines = self.total_lines + 1
                 if nr in sourcefile.lines or previousLineIsContinued:
                     self.executed_lines = self.executed_lines + 1
-                    self.sourcecode.append ((ShcovFileStats.LINE_COV, line))
+                    self.sourcecode.append((ShcovFileStats.LINE_COV, line))
                 else:
-                    self.sourcecode.append ((ShcovFileStats.LINE_UNCOV, line))
+                    self.sourcecode.append((ShcovFileStats.LINE_UNCOV, line))
             else:
-                self.sourcecode.append ((ShcovFileStats.LINE_NOCODE, line))
+                self.sourcecode.append((ShcovFileStats.LINE_NOCODE, line))
 
             if line.endswith("\\"):
                 previousLineIsContinued = True
@@ -105,7 +107,8 @@ class ShcovFileStats (object):
             return False
         return True
 
-class ShcovReport (object):
+
+class ShcovReport(object):
     """
     Class that reads the coverage files and the source code and produces a report in
     several formats.
@@ -181,7 +184,7 @@ span.uncov {
 </html>
 """
 
-    def __init__ (self, script_base, data_dir, out_dir):
+    def __init__(self, script_base, data_dir, out_dir):
         self.script_base = script_base
         self.data_dir = data_dir
         self.out_dir = out_dir
@@ -190,9 +193,9 @@ span.uncov {
         self.total_lines = 0
         self.executed_lines = 0
 
-    def process (self):
-        if not os.path.exists (self.out_dir):
-            os.mkdir (self.out_dir)
+    def process(self):
+        if not os.path.exists(self.out_dir):
+            os.mkdir(self.out_dir)
 
         for root, dirs, files in os.walk(self.data_dir, topdown=False):
             for name in files:
@@ -200,9 +203,9 @@ span.uncov {
                 try:
                     sourcefile = shcov.file.load(path, script_base=self.script_base)
                     self.files.append(sourcefile)
-                    self.file_stats.append (ShcovFileStats (sourcefile))
+                    self.file_stats.append(ShcovFileStats(sourcefile))
                 except IOError, msg:
-                    print ("IGNORING %s" % path)
+                    print("IGNORING %s" % path)
 
         self.file_stats = sorted(self.file_stats, key=attrgetter("sourcefile.path"))
 
@@ -210,86 +213,91 @@ span.uncov {
             self.total_lines = self.total_lines + filestats.total_lines
             self.executed_lines = self.executed_lines + filestats.executed_lines
 
-    def text (self):
-        with open (os.path.join (self.out_dir, "report.txt"), "w+") as f:
+    def text(self):
+        with open(os.path.join(self.out_dir, "report.txt"), "w+") as f:
             for filestats in self.file_stats:
-                f.write ("%s %f\n" % (filestats.sourcefile.path, (float(filestats.executed_lines) / float(filestats.total_lines)) * 100))
+                f.write("%s %f\n" % (filestats.sourcefile.path, (float(filestats.executed_lines) / float(filestats.total_lines)) * 100))
 
-    def flat_html (self):
+    def flat_html(self):
         # Create the main index.html file with a listing of all the files.
-        with open (os.path.join (self.out_dir, "index.html"), "w+") as f:
-            f.write (ShcovReport.html_start)
+        with open(os.path.join(self.out_dir, "index.html"), "w+") as f:
+            f.write(ShcovReport.html_start)
             coverage = ((float(self.executed_lines) / float(self.total_lines)) * 100)
-            div = tag.div (
-                tag.h1 ("SHCOV"),
-                tag.hr (),
-                tag.table (
-                    tag.tr (tag.th ("Date:"), tag.td (time.strftime("%Y-%m-%d"))),
-                    tag.tr (tag.th ("Code covered:"), tag.td ("%.1f%%" % coverage)),
-                    tag.tr (tag.th ("Instrumented lines:"), tag.td (str (self.total_lines))),
-                    tag.tr (tag.th ("Executed lines:"), tag.td (str (self.executed_lines))),
-                    { "class" : "info" }
+            div = tag.div(
+                tag.h1("SHCOV"),
+                tag.hr(),
+                tag.table(
+                    tag.tr(tag.th("Date:"), tag.td(time.strftime("%Y-%m-%d"))),
+                    tag.tr(tag.th("Code covered:"), tag.td("%.1f%%" % coverage)),
+                    tag.tr(tag.th("Instrumented lines:"), tag.td(str(self.total_lines))),
+                    tag.tr(tag.th("Executed lines:"), tag.td(str(self.executed_lines))),
+                    {"class": "info"}
                     ),
-                tag.hr ()
+                tag.hr()
                 )
-            f.write (toxml (div, pretty_print=True))
+            f.write(toxml(div, pretty_print=True))
 
-            table = tag.table (tag.thead (tag.th ("Filename"), tag.th ("Coverage", colspan="3")), { "class" : "files" })
-            tbody = tag.tbody ()
-            table.append (tbody)
+            table = tag.table(
+                tag.thead(
+                    tag.th("Filename"),
+                    tag.th("Coverage", colspan="3")),
+                {"class": "files"}
+                )
+            tbody = tag.tbody()
+            table.append(tbody)
             for filestats in self.file_stats:
                 coverage = (float(filestats.executed_lines) / float(filestats.total_lines)) * 100
-                filename = filestats.sourcefile.path.replace ("/", "_") + ".html"
-                tbody.append (
-                    tag.tr (
-                        tag.td (tag.a (filestats.sourcefile.path, href=filename)),
-                        tag.td (tag.div (tag.div (style="width: %dpx;" % coverage), {"class": "meter"})),
-                        tag.td ("%.1f%%" % coverage),
-                        tag.td ("%d/%d lines" % (filestats.executed_lines, filestats.total_lines))))
+                filename = filestats.sourcefile.path.replace("/", "_") + ".html"
+                tbody.append(
+                    tag.tr(
+                        tag.td(tag.a(filestats.sourcefile.path, href=filename)),
+                        tag.td(tag.div(tag.div(style="width: %dpx;" % coverage), {"class": "meter"})),
+                        tag.td("%.1f%%" % coverage),
+                        tag.td("%d/%d lines" % (filestats.executed_lines, filestats.total_lines))))
 
-            f.write (toxml (table, pretty_print=True))
-            f.write (ShcovReport.html_end)
+            f.write(toxml(table, pretty_print=True))
+            f.write(ShcovReport.html_end)
 
         # Create a html file for every source file.
         line_class = {
-            ShcovFileStats.LINE_COV : "cov",
-            ShcovFileStats.LINE_UNCOV : "uncov",
-            ShcovFileStats.LINE_NOCODE : "nocode"
+            ShcovFileStats.LINE_COV: "cov",
+            ShcovFileStats.LINE_UNCOV: "uncov",
+            ShcovFileStats.LINE_NOCODE: "nocode"
             }
 
         for filestats in self.file_stats:
-            filename = os.path.join (self.out_dir, filestats.sourcefile.path.replace ("/", "_") + ".html")
-            with open (filename, "w+") as f:
-                f.write (ShcovReport.html_start)
+            filename = os.path.join(self.out_dir, filestats.sourcefile.path.replace("/", "_") + ".html")
+            with open(filename, "w+") as f:
+                f.write(ShcovReport.html_start)
                 coverage = ((float(filestats.executed_lines) / float(filestats.total_lines)) * 100)
-                div = tag.div (
-                    tag.h1 ("SHCOV"),
-                    tag.hr (),
-                    tag.table (
-                        tag.tr (tag.th ("Filename:"), tag.td (filestats.sourcefile.path)),
-                        tag.tr (tag.th ("Date:"), tag.td (time.strftime("%Y-%m-%d"))),
-                        tag.tr (tag.th ("Code covered:"), tag.td ("%.1f%%" % coverage)),
-                        tag.tr (tag.th ("Instrumented lines:"), tag.td (str (filestats.total_lines))),
-                        tag.tr (tag.th ("Executed lines:"), tag.td (str (filestats.executed_lines))),
-                        { "class" : "info" }
+                div = tag.div(
+                    tag.h1("SHCOV"),
+                    tag.hr(),
+                    tag.table(
+                        tag.tr(tag.th("Filename:"), tag.td(filestats.sourcefile.path)),
+                        tag.tr(tag.th("Date:"), tag.td(time.strftime("%Y-%m-%d"))),
+                        tag.tr(tag.th("Code covered:"), tag.td("%.1f%%" % coverage)),
+                        tag.tr(tag.th("Instrumented lines:"), tag.td(str(filestats.total_lines))),
+                        tag.tr(tag.th("Executed lines:"), tag.td(str(filestats.executed_lines))),
+                        {"class": "info"}
                         ),
-                    tag.hr ()
+                    tag.hr()
                     )
-                f.write (toxml (div, pretty_print=True))
+                f.write(toxml(div, pretty_print=True))
 
-                pre = tag.pre ()
-                lineno=1
+                pre = tag.pre()
+                lineno = 1
                 # lineno column shouldn't be wider than the longest line.
-                lineno_format = "%%%dd" % len (str (len (filestats.sourcecode)))
+                lineno_format = "%%%dd" % len(str(len(filestats.sourcecode)))
                 for linetype, line in filestats.sourcecode:
-                    count = filestats.sourcefile.lines[lineno] if filestats.sourcefile.lines.has_key (lineno) else ""
-                    pre.append (tag.span (lineno_format % lineno, { "class" : "lineno" }))
-                    pre.append (tag.span ("%8s | " % count, { "class" : line_class[linetype] }))
-                    pre.append (tag.span ("%s\n" % line, { "class" : line_class[linetype] }))
+                    count = filestats.sourcefile.lines[lineno] if lineno in filestats.sourcefile.lines else ""
+                    pre.append(tag.span(lineno_format % lineno, {"class": "lineno"}))
+                    pre.append(tag.span("%8s | " % count, {"class": line_class[linetype]}))
+                    pre.append(tag.span("%s\n" % line, {"class": line_class[linetype]}))
                     lineno = lineno + 1
-                f.write (toxml (pre))
+                f.write(toxml(pre))
 
-                f.write (ShcovReport.html_end)
+                f.write(ShcovReport.html_end)
 
 if __name__ == "__main__":
     usage = """%prog [--help]
@@ -303,26 +311,26 @@ Output formats:
   text                  Text output where each file has a coverage percentage.
   flat_html
 """
-    parser = optparse.OptionParser (usage=usage)
-    parser.add_option ("--format", dest="format",
-                       help="The output style of the report. (text|flat_html)", default="text")
-    parser.add_option ("--script-base", dest="script_base",
-                       help="Source code path", default=None)
-    parser.add_option ("--data-dir", dest="data_dir", help="Data directory (MANDATORY)")
-    parser.add_option ("--out-dir", dest="out_dir", help="Out directory (MANDATORY)")
-    options, args = parser.parse_args ()
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("--format", dest="format",
+                      help="The output style of the report. (text|flat_html)", default="text")
+    parser.add_option("--script-base", dest="script_base",
+                      help="Source code path", default=None)
+    parser.add_option("--data-dir", dest="data_dir", help="Data directory (MANDATORY)")
+    parser.add_option("--out-dir", dest="out_dir", help="Out directory (MANDATORY)")
+    options, args = parser.parse_args()
 
-    if len (args) != 2:
-        print ("Incorrect number of arguments.")
-        sys.exit (1)
+    if len(args) != 2:
+        print("Incorrect number of arguments.")
+        sys.exit(1)
 
-    r = ShcovReport (options.script_base, args[0], args[1])
-    r.process ()
+    r = ShcovReport(options.script_base, args[0], args[1])
+    r.process()
 
     # The name of the format is actually a function name to call. So lets look it up and
     # call it.
-    if not hasattr (r, options.format):
-        print ("Invalid format")
-        sys.exit (1)
-    f = getattr (r, options.format)
-    f ()
+    if not hasattr(r, options.format):
+        print("Invalid format")
+        sys.exit(1)
+    f = getattr(r, options.format)
+    f()
